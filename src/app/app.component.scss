@@ -13,6 +13,7 @@ nav {
 
 h1 {
   color: #fff;
+  font-size: 1rem;
 }
 
 h2 {
@@ -26,7 +27,7 @@ h2 {
 
 .input-wrapper {
   border-radius: 1em;
-  width: min(95%, 60em);
+  width: min(95%, 30em);
   
   input {
     width: 100%;
@@ -43,7 +44,7 @@ h2 {
   left: 50%;
   transform: translateX(-50%);
   z-index: 401;
-  width: 95%;
+  width: 80%;
 
   .col-lg-3:not(:last-child) {
     border-right: 1px inset hsl(0, 0%, 59%);
