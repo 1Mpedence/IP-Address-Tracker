@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import * as L from 'leaflet';
 
-import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
-import { fromEvent, Observable, throwError } from 'rxjs';
-import { catchError, map, debounceTime } from 'rxjs/operators';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import {  throwError } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
@@ -29,6 +29,8 @@ export class AppComponent implements OnInit {
 
   apiKey = 'at_yk21c6IhIFbVviUdbHHp3F8zrAR7G';
 
+  urlHeader = `https://geo.ipify.org/api/v1?apiKey=${this.apiKey}`;
+
   icon = L.icon({
     iconUrl: '../assets/images/icon-location.svg',
     iconSize: [50, 60],
@@ -40,16 +42,26 @@ export class AppComponent implements OnInit {
 
   submiting = false;
 
-  // error: string = '';
   error : any;
-  errorMssg: any;
+
+  errorMssg: string = '';
 
   constructor(
     private http: HttpClient
   ) {}
 
   ngOnInit(): void {
-    this.generateMap(19.125362, 72.999199);
+    this.submiting = true;
+    this.api(this.urlHeader)
+    .subscribe(
+      (res: any) => {
+        this.generateMap(res.location.lat, res.location.lng)
+        this.submiting = false;
+      },
+      (err) => {
+        this.onError(err);
+      }
+    )
   }
 
   generateMap(lat: number, lng: number){
@@ -63,27 +75,24 @@ export class AppComponent implements OnInit {
   }
 
   onSubmit(){
-    const url = `https://geo.ipify.org/api/v1?apiKey=${this.apiKey}&ipAddress=${this.ipAddress}`;
+    const url = `${this.urlHeader}&ipAddress=${this.ipAddress}`;
     this.submiting = true;
-    this.http.get(url).pipe(
-      map((data) => {
-        return data;
-      }), catchError(this.handleError)
-    ).subscribe((res: any) => {
-      this.map.setView([res.location.lat, res.location.lng], 13);
-      this.marker.setLatLng([res.location.lat, res.location.lng]);
+    
+    this.api(url)
+    .subscribe(
+      (res: any) => {
+        this.map.setView([res.location.lat, res.location.lng], 13);
+        this.marker.setLatLng([res.location.lat, res.location.lng]);
 
-      this.ip = res.ip;
-      this.location = res.location.city + ',' + res.location.country;
-      this.timezone = res.location.timezone;
-      this.isp = res.isp;
+        this.ip = res.ip;
+        this.location = res.location.city + ',' + res.location.country;
+        this.timezone = res.location.timezone;
+        this.isp = res.isp;
 
-      this.submiting = false;
-    },
-    (err: any) => {
         this.submiting = false;
-        this.error = true;
-        this.errorMssg = err?.error?.messages;
+      },
+      (err: any) => {
+        this.onError(err);
         setTimeout(() => {
           this.error = false;
           this.errorMssg = '';
@@ -92,8 +101,21 @@ export class AppComponent implements OnInit {
     );
   }
 
+  onError(err: any) {
+    this.submiting = false;
+    this.error = true;
+    this.errorMssg = err?.error?.messages;
+  }
+
+  api(url: string) {
+    return this.http.get(url).pipe(
+      map((data) => {
+        return data;
+      }, catchError(this.handleError)),
+    );
+  }
+
   private handleError(error: HttpErrorResponse) {
-    
     return throwError(error);
   }
 }
